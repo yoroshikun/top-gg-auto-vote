@@ -1,0 +1,31 @@
+name: Auto Vote Cron
+on:
+  schedule:
+    - cron: '0 0,12 * * *'
+jobs:
+  installDependencies:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Use Node.js 12.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12.x
+      - uses: actions/cache@v2
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
+      - name: Install deps
+        run: yarn --frozen-lockfile --ignore-scripts
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 'true'
+      - name: Build
+        run: yarn compile
+      - name: Vote
+        uses: mujo-code/puppeteer-headful@master
+        env:
+          CI: 'true'
+          COOKIE: ${{ secrets.COOKIE }}
+        with:
+          args: yarn vote
